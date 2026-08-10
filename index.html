@@ -3342,7 +3342,6 @@ async function sendEmail() {
         access_key:  CONFIG.web3formsKey,
         subject:     `New Gym Order — ${S.name} (${fmt(cartTotal())}) — ${CONFIG.gymName}`,
         from_name:   'Harvest Hub Gym Orders',
-        email:       CONFIG.notificationEmail,
         message:     body
       })
     });
