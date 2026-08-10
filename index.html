@@ -2857,6 +2857,10 @@ var qrcode = function() {
   <!-- STEP 1 — MENU -->
   <div class="step-panel active" id="step-1">
     <div class="gym-banner" id="gym-banner"></div>
+    <div id="gym-url-tip" style="display:none;background:#fef9c3;border:1px solid #ca8a04;color:#713f12;border-radius:10px;padding:10px 14px;font-size:0.8rem;font-weight:600;margin-bottom:14px;line-height:1.5;">
+      💡 <strong>To set the event name without editing code:</strong> share the link as<br>
+      <code style="background:#fff8;padding:2px 6px;border-radius:4px;font-size:0.78rem">gym-popups.vercel.app/?event=BFT+Kinex+Monday+9am</code>
+    </div>
     <h2 class="section-title">Select your items</h2>
     <p class="section-subtitle">Choose quantities for each item. Need more than 10? Use the custom quantity field.</p>
     <div class="alert alert-error" id="menu-error">Please select at least 1 item before continuing.</div>
@@ -3158,7 +3162,7 @@ function buildQRPayload(uen, amount, reference, merchant) {
 
 function renderQR() {
   const total = cartTotal();
-  const ref   = (CONFIG.gymName + ' ' + S.name).substring(0, 25);
+  const ref   = S.name.substring(0, 25);
   const payload = buildQRPayload(CONFIG.payNowUEN, total, ref, CONFIG.merchantName);
 
   $('pay-amount').textContent = fmt(total);
@@ -3311,7 +3315,7 @@ async function sendEmail() {
     .map(p => `  ${p.name} × ${S.cart[p.id]}  =  ${fmt(S.cart[p.id] * p.price)}`)
     .join('\n');
 
-  const ref = (CONFIG.gymName + ' ' + S.name).substring(0, 25);
+  const ref = S.name.substring(0, 25);
 
   const body = [
     `EVENT / GYM: ${CONFIG.gymName}`,
@@ -3458,6 +3462,13 @@ function updateStepper() {
    ============================================================ */
 function renderMenu() {
   $('gym-banner').textContent = CONFIG.gymName;
+
+  // Show URL tip only when no ?event= param is set (i.e. using default)
+  const _params = new URLSearchParams(window.location.search);
+  if (!_params.get('event') && !_params.get('gym')) {
+    const tip = document.getElementById('gym-url-tip');
+    if (tip) tip.style.display = 'block';
+  }
 
   // Setup notice
   if (CONFIG.web3formsKey === 'YOUR_WEB3FORMS_KEY_HERE') {
@@ -3666,8 +3677,13 @@ function renderDone() {
 }
 
 /* ============================================================
-   INIT
+   INIT — gym name from URL ?event= param (fallback to CONFIG)
    ============================================================ */
+(function() {
+  const params = new URLSearchParams(window.location.search);
+  const urlEvent = params.get('event') || params.get('gym');
+  if (urlEvent) CONFIG.gymName = decodeURIComponent(urlEvent);
+})();
 updateStepper();
 renderMenu();
 </script>
