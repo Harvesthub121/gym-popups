@@ -1,0 +1,1351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Harvest Hub — Gym Pre-Order</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+  <style>
+    /* ===== RESET & ROOT ===== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:            #f0e7d0;
+      --surface:       #ffffff;
+      --text:          #1f2430;
+      --muted:         #5a6068;
+      --border:        #e6e3de;
+      --primary:       #a84030;
+      --primary-dark:  #782e22;
+      --primary-light: #d5b5b0;
+      --success:       #16a34a;
+      --success-light: #eafaf0;
+      --error:         #dc2626;
+      --error-light:   #fdecec;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ===== SETUP NOTICE (shown when Web3Forms key is placeholder) ===== */
+    .setup-notice {
+      background: #fef9c3;
+      border-bottom: 2px solid #ca8a04;
+      color: #713f12;
+      font-size: 0.82rem;
+      padding: 10px 16px;
+      text-align: center;
+      font-weight: 600;
+      display: none;
+    }
+    .setup-notice a { color: #713f12; }
+
+    /* ===== HEADER ===== */
+    .site-header {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 16px 10px;
+    }
+
+    .header-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .header-logo {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      object-fit: cover;
+      flex-shrink: 0;
+    }
+
+    .header-brand-name {
+      font-size: 1.15rem;
+      font-weight: 800;
+    }
+
+    /* ===== STEPPER ===== */
+    .stepper {
+      display: flex;
+      align-items: flex-start;
+      max-width: 760px;
+      margin: 0 auto;
+    }
+
+    .step-item {
+      display: flex;
+      align-items: center;
+      flex: 1;
+    }
+
+    .step-dot-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+
+    .step-dot {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.72rem;
+      font-weight: 700;
+      background: var(--border);
+      color: var(--muted);
+      transition: background 0.2s, color 0.2s;
+      flex-shrink: 0;
+    }
+
+    .step-dot.active  { background: var(--primary); color: #fff; }
+    .step-dot.done    { background: var(--primary-dark); color: #fff; }
+
+    .step-label {
+      font-size: 0.66rem;
+      font-weight: 600;
+      color: var(--muted);
+      white-space: nowrap;
+      text-align: center;
+    }
+    .step-label.active  { color: var(--primary); font-weight: 700; }
+    .step-label.done    { color: var(--primary-dark); }
+
+    .step-line {
+      flex: 1;
+      height: 2px;
+      background: var(--border);
+      margin: 0 3px;
+      margin-bottom: 18px;
+      transition: background 0.2s;
+    }
+    .step-line.done { background: var(--primary-dark); }
+
+    @media (max-width: 480px) {
+      .step-label { display: none; }
+      .step-label.active { display: block; font-size: 0.62rem; }
+    }
+
+    /* ===== MAIN ===== */
+    .main-content {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 24px 16px 40px;
+    }
+
+    .step-panel { display: none; }
+    .step-panel.active { display: block; }
+
+    /* ===== GYM NAME BANNER ===== */
+    .gym-banner {
+      background: var(--primary);
+      color: #fff;
+      border-radius: 14px;
+      padding: 14px 20px;
+      text-align: center;
+      font-size: 1.1rem;
+      font-weight: 800;
+      letter-spacing: 0.01em;
+      margin-bottom: 22px;
+    }
+
+    /* ===== SECTION HEADER ===== */
+    .section-title    { font-size: 1.4rem; font-weight: 800; margin-bottom: 4px; }
+    .section-subtitle { font-size: 0.92rem; color: var(--muted); margin-bottom: 20px; line-height: 1.5; }
+
+    /* ===== ALERT ===== */
+    .alert {
+      border-radius: 10px;
+      padding: 12px 14px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      margin-bottom: 14px;
+      display: none;
+    }
+    .alert.show { display: block; }
+    .alert-error { background: var(--error-light); color: var(--error); border: 1px solid var(--error); }
+
+    /* ===== PRODUCT GRID ===== */
+    .product-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-bottom: 100px;
+    }
+    @media (max-width: 480px) { .product-grid { grid-template-columns: 1fr; } }
+
+    /* ===== PRODUCT CARD ===== */
+    .product-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .product-img-wrap {
+      aspect-ratio: 4/3;
+      background: var(--primary-light);
+      position: relative;
+      overflow: hidden;
+    }
+    .product-img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+    }
+    .photo-dots {
+      position: absolute;
+      bottom: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 6px;
+    }
+    .photo-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.5);
+      cursor: pointer;
+      transition: background 0.15s, transform 0.15s;
+    }
+    .photo-dot.active { background: #fff; transform: scale(1.3); }
+
+    .product-body {
+      padding: 12px 14px 16px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    .product-name  { font-weight: 700; font-size: 0.92rem; min-height: 2.4em; line-height: 1.3; margin-bottom: 3px; }
+    .product-price { color: var(--primary-dark); font-weight: 700; font-size: 0.95rem; margin-bottom: 4px; }
+    .product-desc  { font-size: 0.82rem; color: var(--muted); margin-bottom: 10px; line-height: 1.4; flex: 1; }
+
+    .qty-row { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
+    .qty-label { font-size: 0.78rem; font-weight: 600; color: var(--muted); width: 50px; flex-shrink: 0; }
+
+    .qty-select, .qty-custom {
+      flex: 1;
+      padding: 7px 10px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 0.88rem;
+      color: var(--text);
+      background: #fff;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .qty-select:focus, .qty-custom:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px var(--primary-light);
+    }
+
+    .line-total   { font-size: 0.78rem; color: var(--muted); text-align: right; min-height: 1.2em; }
+    .custom-note  { font-size: 0.68rem; color: var(--primary-dark); font-weight: 700; min-height: 1em; }
+
+    /* Nutrition accordion */
+    .nutrition-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      background: none;
+      border: none;
+      border-top: 1px dashed var(--border);
+      padding: 9px 0 0;
+      margin-top: 10px;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--primary-dark);
+      text-align: left;
+    }
+    .chevron { transition: transform 0.2s; font-size: 0.7rem; }
+    .nutrition-toggle.open .chevron { transform: rotate(180deg); }
+
+    .nutrition-content { display: none; margin-top: 8px; }
+    .nutrition-content.open { display: block; }
+
+    .macro-pills { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 6px; }
+    .macro-pill {
+      background: var(--bg);
+      border-radius: 999px;
+      padding: 3px 10px;
+      font-size: 0.76rem;
+      font-weight: 700;
+    }
+    .macro-pill.protein { background: var(--success-light); color: var(--success); }
+    .allergen-text { font-size: 0.75rem; color: var(--muted); margin-top: 2px; line-height: 1.4; }
+
+    /* ===== STICKY BAR ===== */
+    .sticky-bar {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      z-index: 30;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      box-shadow: 0 -4px 14px rgba(0,0,0,0.08);
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .sticky-label  { font-size: 0.72rem; color: var(--muted); }
+    .sticky-amount { font-size: 1.2rem; font-weight: 800; }
+
+    /* ===== BUTTONS ===== */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 13px 22px;
+      border-radius: 12px;
+      font-family: inherit;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      border: none;
+      transition: opacity 0.15s, background 0.15s;
+      text-decoration: none;
+      line-height: 1;
+    }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover:not(:disabled) { background: var(--primary-dark); }
+    .btn-ghost { background: transparent; color: var(--text); border: 1.5px solid var(--border); }
+    .btn-ghost:hover:not(:disabled) { background: var(--bg); }
+    .btn-success { background: var(--success); color: #fff; font-size: 1rem; padding: 15px 22px; }
+    .btn-success:hover:not(:disabled) { background: #15803d; }
+    .btn-full { width: 100%; }
+
+    .nav-row { display: flex; gap: 10px; margin-top: 24px; }
+    .nav-row .btn-primary { flex: 1; }
+
+    /* ===== CARD ===== */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 18px;
+      margin-bottom: 16px;
+    }
+
+    /* ===== CHECKOUT SUMMARY ===== */
+    .summary-line {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      gap: 12px;
+    }
+    .summary-line:last-child { border-bottom: none; }
+    .summary-item-name  { font-weight: 700; font-size: 0.92rem; }
+    .summary-item-qty   { font-size: 0.82rem; color: var(--muted); margin-top: 2px; }
+    .summary-item-total { font-weight: 700; font-size: 0.92rem; flex-shrink: 0; }
+
+    .summary-total-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 14px;
+      margin-top: 10px;
+      border-top: 2px solid var(--text);
+    }
+    .summary-total-label  { font-size: 1rem; font-weight: 700; }
+    .summary-total-amount { font-size: 1.2rem; font-weight: 800; }
+
+    /* ===== FORM ===== */
+    .form-group { margin-bottom: 18px; }
+    .form-label { display: block; font-size: 0.9rem; font-weight: 600; margin-bottom: 7px; }
+    .form-label .req { color: var(--error); }
+
+    .form-input {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 0.95rem;
+      color: var(--text);
+      background: #fff;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .form-input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-light); }
+    .form-input.err   { border-color: var(--error); }
+
+    .form-hint  { font-size: 0.78rem; color: var(--muted); margin-top: 5px; }
+    .form-error { font-size: 0.78rem; color: var(--error); margin-top: 5px; min-height: 1.1em; }
+
+    /* ===== PAYMENT ===== */
+    .amount-block { text-align: center; margin-bottom: 22px; }
+    .amount-label { font-size: 0.85rem; color: var(--muted); margin-bottom: 4px; }
+    .amount-value { font-size: 2.4rem; font-weight: 800; color: var(--primary-dark); }
+
+    .qr-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 24px 20px;
+      text-align: center;
+      margin-bottom: 16px;
+    }
+    .qr-title    { font-weight: 800; font-size: 1.1rem; margin-bottom: 5px; }
+    .qr-subtitle { font-size: 0.83rem; color: var(--muted); margin-bottom: 18px; line-height: 1.5; }
+
+    #qr-canvas {
+      display: block;
+      margin: 0 auto;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px;
+      background: #fff;
+    }
+
+    .qr-ref {
+      margin-top: 12px;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+    .qr-ref strong { color: var(--primary-dark); }
+
+    .save-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 14px;
+      padding: 10px 20px;
+      background: var(--bg);
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      font-family: inherit;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      color: var(--text);
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .save-btn:hover { background: var(--primary-light); border-color: var(--primary-light); }
+
+    .save-tip {
+      font-size: 0.74rem;
+      color: var(--muted);
+      margin-top: 8px;
+      font-style: italic;
+      line-height: 1.4;
+    }
+
+    .payment-confirm-box {
+      background: var(--surface);
+      border: 2px solid var(--primary-light);
+      border-radius: 16px;
+      padding: 20px 18px;
+      text-align: center;
+      margin-bottom: 16px;
+    }
+    .payment-confirm-instr {
+      font-size: 0.88rem;
+      color: var(--muted);
+      margin-bottom: 16px;
+      line-height: 1.6;
+    }
+    .payment-status {
+      font-size: 0.82rem;
+      color: var(--muted);
+      margin-top: 10px;
+      min-height: 1.2em;
+      font-weight: 500;
+    }
+
+    /* ===== DONE ===== */
+    .done-wrap {
+      text-align: center;
+      padding: 36px 16px 48px;
+    }
+    .success-icon {
+      width: 68px;
+      height: 68px;
+      border-radius: 50%;
+      background: var(--success-light);
+      color: var(--success);
+      font-size: 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px;
+    }
+    .done-heading { font-size: 1.7rem; font-weight: 800; margin-bottom: 10px; }
+    .done-body {
+      font-size: 0.95rem;
+      color: var(--muted);
+      max-width: 360px;
+      margin: 0 auto 28px;
+      line-height: 1.7;
+    }
+    .done-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 18px;
+      max-width: 420px;
+      margin: 0 auto 24px;
+      text-align: left;
+    }
+    .done-card-title { font-weight: 700; font-size: 0.92rem; margin-bottom: 12px; }
+    .done-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      padding: 6px 0;
+      border-bottom: 1px solid var(--border);
+      gap: 10px;
+    }
+    .done-row:last-of-type { border-bottom: none; }
+    .done-meta { margin-top: 12px; font-size: 0.82rem; color: var(--muted); line-height: 1.7; }
+    .done-meta strong { color: var(--text); }
+
+    /* ===== FOOTER ===== */
+    .site-footer { text-align: center; padding: 24px 16px; font-size: 0.8rem; color: var(--muted); }
+  </style>
+</head>
+<body>
+
+<!-- Setup notice (auto-hidden when key is set) -->
+<div class="setup-notice" id="setup-notice">
+  ⚠️ Email notifications are not active. <a href="https://web3forms.com" target="_blank">Get your free Web3Forms key</a> and paste it into CONFIG.web3formsKey in the HTML source.
+</div>
+
+<!-- ===== HEADER ===== -->
+<header class="site-header">
+  <div class="header-brand">
+    <img src="https://harvesthubcatering.vercel.app/assets/harvest-hub-logo.jpg"
+         alt="Harvest Hub" class="header-logo" />
+    <span class="header-brand-name">Harvest Hub</span>
+  </div>
+  <nav class="stepper" id="stepper" aria-label="Order steps"></nav>
+</header>
+
+<!-- ===== MAIN ===== -->
+<main class="main-content">
+
+  <!-- STEP 1 — MENU -->
+  <div class="step-panel active" id="step-1">
+    <div class="gym-banner" id="gym-banner"></div>
+    <h2 class="section-title">Select your items</h2>
+    <p class="section-subtitle">Choose quantities for each item. Need more than 10? Use the custom quantity field.</p>
+    <div class="alert alert-error" id="menu-error">Please select at least 1 item before continuing.</div>
+    <div class="product-grid" id="product-grid"></div>
+  </div>
+
+  <!-- STICKY BAR (step 1 only) -->
+  <div class="sticky-bar" id="sticky-bar">
+    <div>
+      <div class="sticky-label">Subtotal</div>
+      <div class="sticky-amount" id="sticky-amount">S$0.00</div>
+    </div>
+    <button class="btn btn-primary" onclick="goTo(2)">Continue to Checkout</button>
+  </div>
+
+  <!-- STEP 2 — CHECKOUT -->
+  <div class="step-panel" id="step-2">
+    <h2 class="section-title">Checkout summary</h2>
+    <p class="section-subtitle">Review your order before proceeding.</p>
+    <div class="card" id="checkout-card"></div>
+    <div class="nav-row">
+      <button class="btn btn-ghost" onclick="goTo(1)">← Back</button>
+      <button class="btn btn-primary" onclick="goTo(3)">Continue</button>
+    </div>
+  </div>
+
+  <!-- STEP 3 — DETAILS -->
+  <div class="step-panel" id="step-3">
+    <h2 class="section-title">Your details</h2>
+    <p class="section-subtitle">We'll use these to confirm your order.</p>
+
+    <div class="form-group">
+      <label class="form-label" for="f-name">Name <span class="req">*</span></label>
+      <input type="text" id="f-name" class="form-input" placeholder="e.g. Sarah Tan" autocomplete="name" />
+      <div class="form-error" id="e-name"></div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="f-wa">Contact / WhatsApp <span class="req">*</span></label>
+      <input type="tel" id="f-wa" class="form-input" placeholder="e.g. +65 9123 4567" autocomplete="tel" />
+      <div class="form-hint">WhatsApp preferred</div>
+      <div class="form-error" id="e-wa"></div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="f-session">Class Session Time <span class="req">*</span></label>
+      <input type="text" id="f-session" class="form-input" placeholder="e.g. Tuesday 7am HIIT" />
+      <div class="form-error" id="e-session"></div>
+    </div>
+
+    <div class="nav-row">
+      <button class="btn btn-ghost" onclick="goTo(2)">← Back</button>
+      <button class="btn btn-primary" onclick="submitDetails()">Continue to Payment</button>
+    </div>
+  </div>
+
+  <!-- STEP 4 — PAYMENT -->
+  <div class="step-panel" id="step-4">
+    <h2 class="section-title">Payment</h2>
+
+    <div class="amount-block">
+      <div class="amount-label">Amount to pay</div>
+      <div class="amount-value" id="pay-amount">S$0.00</div>
+    </div>
+
+    <div class="qr-card">
+      <div class="qr-title">Pay with PayNow</div>
+      <div class="qr-subtitle">Scan with your banking app — the amount and reference are already filled in.</div>
+      <canvas id="qr-canvas"></canvas>
+      <div class="qr-ref">Reference: <strong id="qr-ref-text">—</strong></div>
+      <div>
+        <button class="save-btn" onclick="saveQR()">📥 Save QR to Photos</button>
+        <div class="save-tip" id="save-tip">Tap to save the QR image for easier scanning from your phone.</div>
+      </div>
+    </div>
+
+    <div class="payment-confirm-box">
+      <p class="payment-confirm-instr">Once you have completed payment via PayNow, tap the button below to confirm your order and notify our team.</p>
+      <button class="btn btn-success btn-full" id="btn-paid" onclick="confirmPayment()">
+        ✓ &nbsp;Payment is Made
+      </button>
+      <div class="payment-status" id="pay-status"></div>
+    </div>
+
+    <div class="nav-row">
+      <button class="btn btn-ghost" onclick="goTo(3)">← Back</button>
+    </div>
+  </div>
+
+  <!-- STEP 5 — DONE -->
+  <div class="step-panel" id="step-5">
+    <div class="done-wrap">
+      <div class="success-icon">✓</div>
+      <h2 class="done-heading">Order Received!</h2>
+      <p class="done-body">Thank you — we've received your order and payment confirmation. We'll be in touch to arrange your pick-up at class.</p>
+      <div class="done-card" id="done-card"></div>
+      <button class="btn btn-ghost" onclick="window.location.reload()">Place another order</button>
+    </div>
+  </div>
+
+</main>
+
+<footer class="site-footer">© 2026 Harvest Hub</footer>
+
+<!-- ===== SCRIPT ===== -->
+<script>
+/* ============================================================
+   CONFIG — edit these values when switching gym events
+   ============================================================ */
+const CONFIG = {
+  gymName: 'BFT Kinex Pre-Order',   // ← Change for each gym/class
+  payNowUEN: '202521135G',
+  merchantName: 'Harvest Hub',
+  notificationEmail: 'harvesthubindustries@gmail.com',
+  // Get a FREE key at https://web3forms.com  (enter your email → receive key by email)
+  web3formsKey: 'YOUR_WEB3FORMS_KEY_HERE'
+};
+
+/* ============================================================
+   PRODUCT DATA
+   ============================================================ */
+const PRODUCTS = [
+  {
+    id: 'hcs-breast',
+    name: 'Hainanese Chicken Somen (Breast)',
+    price: 10.00,
+    desc: 'Poached chicken breast over chilled somen with chye sim, cucumber and scallion in a savoury soy-oyster dressing.',
+    imgs: [
+      'https://harvesthubcatering.vercel.app/assets/products/hainanese-chicken-somen-1-topshot.jpg',
+      'https://harvesthubcatering.vercel.app/assets/products/hainanese-chicken-somen-2-label.jpg'
+    ],
+    nut: { kcal: 550, protein: '37g', carbs: '62g', fat: '10g', fibre: null },
+    allergens: 'Gluten, Soy, Sesame, Nuts, Egg, Fish, Shellfish, Dairy',
+    weight: '475g'
+  },
+  {
+    id: 'hcs-thigh',
+    name: 'Hainanese Chicken Somen (Thigh)',
+    price: 10.50,
+    desc: 'Juicy chicken thigh over chilled somen with chye sim, cucumber and scallion in a savoury soy-oyster dressing.',
+    imgs: [
+      'https://harvesthubcatering.vercel.app/assets/products/hainanese-chicken-somen-1-topshot.jpg',
+      'https://harvesthubcatering.vercel.app/assets/products/hainanese-chicken-somen-2-label.jpg'
+    ],
+    nut: { kcal: 575, protein: '35g', carbs: '62g', fat: '14g', fibre: null },
+    allergens: 'Gluten, Soy, Sesame, Nuts, Egg, Fish, Shellfish, Dairy',
+    weight: '475g'
+  },
+  {
+    id: 'thai-beef',
+    name: 'Thai Beef Salad Glass Noodles',
+    price: 12.00,
+    desc: 'Beef flank with glass noodles, cherry tomato, cucumber, mint and peanuts in a zesty Thai lime dressing.',
+    imgs: [
+      'https://harvesthubcatering.vercel.app/assets/products/thai-beef-glass-noodles-1-topshot.jpg',
+      'https://harvesthubcatering.vercel.app/assets/products/thai-beef-glass-noodles-2-label.jpg'
+    ],
+    nut: { kcal: 485, protein: '35g', carbs: '61g', fat: '15g', fibre: null },
+    allergens: 'Gluten, Soy, Sesame, Nuts, Egg, Fish, Shellfish, Dairy',
+    weight: '450g'
+  },
+  {
+    id: 'yuzu-prawn',
+    name: 'Mentaiko Yuzu Glazed Prawn Udon',
+    price: 13.00,
+    desc: 'Prawn and broccoli over chilled udon in a creamy yuzu-mentaiko sauce with tobiko and crispy seaweed.',
+    imgs: [
+      'https://harvesthubcatering.vercel.app/assets/products/yuzu-prawn-udon-1-topshot.jpg',
+      'https://harvesthubcatering.vercel.app/assets/products/yuzu-prawn-udon-2-label.jpg'
+    ],
+    nut: { kcal: 530, protein: '28g', carbs: '59g', fat: '19g', fibre: null },
+    allergens: 'Gluten, Soy, Sesame, Nuts, Egg, Fish, Shellfish, Dairy',
+    weight: '470g'
+  },
+  {
+    id: 'sc-yogurt',
+    name: 'Strawberry Cheesecake High Protein Yoghurt',
+    price: 8.00,
+    desc: 'Dessert-style high-protein yoghurt — 25g protein, tastes like cheesecake.',
+    imgs: ['https://harvesthubcatering.vercel.app/assets/products/strawberry-cheesecake-protein-yogurt.jpg'],
+    nut: { kcal: 230, protein: '25g', carbs: '24g', fat: '5g', fibre: '2g' },
+    allergens: 'Dairy',
+    weight: null
+  },
+  {
+    id: 'choc-chia',
+    name: 'Chocolate Banana Chia Pudding',
+    price: 8.00,
+    desc: 'Rich cacao chia pudding layered with banana. Fibre-packed and filling.',
+    imgs: ['https://harvesthubcatering.vercel.app/assets/products/chocolate-banana-chia-pudding.jpg'],
+    nut: { kcal: 300, protein: '10g', carbs: '40g', fat: '11g', fibre: '9g' },
+    allergens: 'Dairy',
+    weight: null
+  },
+  {
+    id: 'acai-swirl',
+    name: 'Acai Yoghurt Swirl',
+    price: 7.50,
+    desc: 'Smooth açaí blended into creamy yoghurt, swirled and ready to eat.',
+    imgs: ['https://harvesthubcatering.vercel.app/assets/products/acai-yoghurt-swirl.jpg'],
+    nut: { kcal: 280, protein: '12g', carbs: '38g', fat: '8g', fibre: '6g' },
+    allergens: 'Dairy',
+    weight: null
+  },
+  {
+    id: 'apple-muesli',
+    name: 'Apple Almond Muesli',
+    price: 7.00,
+    desc: 'Toasted almond muesli with apple, soaked for a soft overnight crunch.',
+    imgs: ['https://harvesthubcatering.vercel.app/assets/products/apple-almond-muesli.jpg'],
+    nut: { kcal: 340, protein: '11g', carbs: '52g', fat: '11g', fibre: '7g' },
+    allergens: 'Gluten, Tree nuts, Dairy',
+    weight: null
+  },
+  {
+    id: 'blueberry-oats',
+    name: 'Blueberry Coconut Flakes Overnight Oats',
+    price: 6.00,
+    desc: 'Rolled oats soaked in greek yoghurt with blueberries, coconut flakes and chia.',
+    imgs: ['https://harvesthubcatering.vercel.app/assets/products/blueberry-coconut-overnight-oats.jpg'],
+    nut: { kcal: 275, protein: '11g', carbs: '38g', fat: '7g', fibre: null },
+    allergens: 'Gluten, Soy, Sesame, Nuts, Egg, Fish, Shellfish, Dairy',
+    weight: '230g'
+  },
+  {
+    id: 'strawberry-oats',
+    name: 'Strawberry Cacao Nibs Overnight Oats',
+    price: 6.00,
+    desc: 'Rolled oats soaked in greek yoghurt with strawberries, cacao nibs and chia.',
+    imgs: ['https://harvesthubcatering.vercel.app/assets/products/strawberry-cacao-nibs-overnight-oats.jpg'],
+    nut: { kcal: 280, protein: '11g', carbs: '37g', fat: '8g', fibre: null },
+    allergens: 'Gluten, Soy, Sesame, Nuts, Egg, Fish, Shellfish, Dairy',
+    weight: '230g'
+  }
+];
+
+/* ============================================================
+   STATE
+   ============================================================ */
+const S = {
+  step: 1,
+  cart: {},   // { id: qty }
+  name: '',
+  wa: '',
+  session: ''
+};
+
+/* ============================================================
+   HELPERS
+   ============================================================ */
+const $  = id => document.getElementById(id);
+const fmt = n  => 'S$' + parseFloat(n).toFixed(2);
+
+function cartTotal() {
+  return PRODUCTS.reduce((t, p) => t + (S.cart[p.id] || 0) * p.price, 0);
+}
+
+/* ============================================================
+   PAYNOW QR
+   ============================================================ */
+function crc16(str) {
+  let c = 0xFFFF;
+  for (let i = 0; i < str.length; i++) {
+    c ^= str.charCodeAt(i) << 8;
+    for (let j = 0; j < 8; j++)
+      c = (c & 0x8000) ? ((c << 1) ^ 0x1021) & 0xFFFF : (c << 1) & 0xFFFF;
+  }
+  return c;
+}
+
+function tlv(tag, val) {
+  return tag + val.length.toString().padStart(2, '0') + val;
+}
+
+function buildQRPayload(uen, amount, reference, merchant) {
+  const mInfo =
+    tlv('00', 'SG.PAYNOW') +
+    tlv('01', '2') +
+    tlv('02', uen) +
+    tlv('03', '0');
+
+  const addData = tlv('01', reference.substring(0, 25));
+
+  let p =
+    tlv('00', '01') +
+    tlv('01', '12') +
+    tlv('26', mInfo) +
+    tlv('52', '0000') +
+    tlv('53', '702') +
+    tlv('54', parseFloat(amount).toFixed(2)) +
+    tlv('58', 'SG') +
+    tlv('59', merchant.substring(0, 25)) +
+    tlv('60', 'Singapore') +
+    tlv('62', addData) +
+    '6304';
+
+  return p + crc16(p).toString(16).toUpperCase().padStart(4, '0');
+}
+
+function renderQR() {
+  const total = cartTotal();
+  const ref   = (CONFIG.gymName + ' ' + S.name).substring(0, 25);
+  const payload = buildQRPayload(CONFIG.payNowUEN, total, ref, CONFIG.merchantName);
+
+  $('pay-amount').textContent = fmt(total);
+  $('qr-ref-text').textContent = ref;
+
+  const canvas = $('qr-canvas');
+
+  if (typeof QRCode !== 'undefined') {
+    QRCode.toCanvas(canvas, payload, {
+      width: 240,
+      margin: 1,
+      color: { dark: '#1f2430', light: '#ffffff' }
+    }, err => { if (err) console.warn('QR error:', err); });
+  } else {
+    // Fallback text placeholder
+    canvas.width = 240; canvas.height = 240;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#f0e7d0';
+    ctx.fillRect(0, 0, 240, 240);
+    ctx.fillStyle = '#782e22';
+    ctx.font = 'bold 13px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('QR loading…', 120, 115);
+    ctx.fillText('Please refresh the page.', 120, 135);
+  }
+}
+
+/* ============================================================
+   SAVE QR TO GALLERY
+   ============================================================ */
+function saveQR() {
+  const srcCanvas = $('qr-canvas');
+  if (!srcCanvas || !srcCanvas.width) {
+    alert('Please wait for the QR code to load first.');
+    return;
+  }
+
+  const W = 400, H = 490;
+  const out = document.createElement('canvas');
+  out.width = W; out.height = H;
+  const ctx = out.getContext('2d');
+
+  // White background
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, W, H);
+
+  // Top red header
+  ctx.fillStyle = '#a84030';
+  ctx.fillRect(0, 0, W, 50);
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 17px Inter, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('Harvest Hub — PayNow', W / 2, 32);
+
+  // QR
+  const qSize = 240;
+  ctx.drawImage(srcCanvas, (W - qSize) / 2, 68, qSize, qSize);
+
+  // Amount
+  ctx.fillStyle = '#1f2430';
+  ctx.font = 'bold 18px Inter, sans-serif';
+  ctx.fillText('Amount: ' + fmt(cartTotal()), W / 2, 342);
+
+  // Reference
+  ctx.fillStyle = '#5a6068';
+  ctx.font = '14px Inter, sans-serif';
+  ctx.fillText('Ref: ' + $('qr-ref-text').textContent, W / 2, 370);
+
+  ctx.font = '13px Inter, sans-serif';
+  ctx.fillText(CONFIG.gymName, W / 2, 395);
+  ctx.fillText('Scan with your banking app to pay', W / 2, 420);
+
+  ctx.fillStyle = '#d5b5b0';
+  ctx.font = '11px Inter, sans-serif';
+  ctx.fillText('© 2026 Harvest Hub', W / 2, 450);
+
+  const dataUrl = out.toDataURL('image/png');
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+
+  if (isIOS) {
+    // iOS: open in new tab so user can long-press → Save to Photos
+    const win = window.open('', '_blank');
+    if (win) {
+      win.document.write(
+        '<html><head><meta name="viewport" content="width=device-width,initial-scale=1"></head>' +
+        '<body style="margin:0;background:#111;display:flex;flex-direction:column;align-items:center;padding:20px">' +
+        '<img src="' + dataUrl + '" style="max-width:100%;border-radius:12px" />' +
+        '<p style="color:#fff;font-family:sans-serif;margin-top:14px;text-align:center;font-size:14px">' +
+        'Long-press the image above, then tap <strong>Save to Photos</strong></p>' +
+        '</body></html>'
+      );
+    }
+    $('save-tip').textContent = 'A new tab has opened — long-press the QR and tap Save to Photos.';
+  } else {
+    // Android / Desktop — blob download
+    fetch(dataUrl)
+      .then(r => r.blob())
+      .then(blob => {
+        const url = URL.createObjectURL(blob);
+        const a   = document.createElement('a');
+        a.href     = url;
+        a.download = 'harvest-hub-paynow-qr.png';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(url), 200);
+        $('save-tip').textContent = 'QR saved! Check your Downloads or Photos.';
+      })
+      .catch(() => {
+        $('save-tip').textContent = 'Download unavailable in this browser — try taking a screenshot.';
+      });
+  }
+}
+
+/* ============================================================
+   EMAIL NOTIFICATION
+   ============================================================ */
+async function sendEmail() {
+  if (CONFIG.web3formsKey === 'YOUR_WEB3FORMS_KEY_HERE') {
+    console.warn('Web3Forms key not set — skipping email notification.');
+    return false;
+  }
+
+  const lines = PRODUCTS
+    .filter(p => (S.cart[p.id] || 0) > 0)
+    .map(p => `  ${p.name} × ${S.cart[p.id]}  =  ${fmt(S.cart[p.id] * p.price)}`)
+    .join('\n');
+
+  const ref = (CONFIG.gymName + ' ' + S.name).substring(0, 25);
+
+  const body = [
+    `EVENT / GYM: ${CONFIG.gymName}`,
+    `CLASS SESSION: ${S.session}`,
+    '',
+    `CUSTOMER`,
+    `Name: ${S.name}`,
+    `WhatsApp: ${S.wa}`,
+    '',
+    `ORDER`,
+    lines,
+    '',
+    `TOTAL: ${fmt(cartTotal())}`,
+    `PayNow Ref: ${ref}`,
+    '',
+    `Submitted: ${new Date().toLocaleString('en-SG', { timeZone: 'Asia/Singapore' })}`
+  ].join('\n');
+
+  try {
+    const res = await fetch('https://api.web3forms.com/submit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        access_key:  CONFIG.web3formsKey,
+        subject:     `New Gym Order — ${S.name} (${fmt(cartTotal())}) — ${CONFIG.gymName}`,
+        from_name:   'Harvest Hub Gym Orders',
+        email:       CONFIG.notificationEmail,
+        message:     body
+      })
+    });
+    return res.ok;
+  } catch (e) {
+    console.warn('Email error:', e);
+    return false;
+  }
+}
+
+/* ============================================================
+   CONFIRM PAYMENT
+   ============================================================ */
+async function confirmPayment() {
+  const btn = $('btn-paid');
+  const status = $('pay-status');
+  btn.disabled = true;
+  btn.textContent = 'Confirming…';
+  status.textContent = 'Notifying our team…';
+
+  await sendEmail();   // advance regardless of email result
+
+  status.textContent = '✓ Team notified!';
+  setTimeout(() => goTo(5), 900);
+}
+
+/* ============================================================
+   NAVIGATION
+   ============================================================ */
+function goTo(step) {
+  if (step === 2 && cartTotal() === 0) {
+    $('menu-error').classList.add('show');
+    return;
+  }
+  $('menu-error').classList.remove('show');
+
+  document.querySelectorAll('.step-panel').forEach(p => p.classList.remove('active'));
+  $('step-' + step).classList.add('active');
+  $('sticky-bar').style.display = step === 1 ? 'flex' : 'none';
+
+  S.step = step;
+  updateStepper();
+
+  if (step === 2) renderCheckout();
+  if (step === 4) renderQR();
+  if (step === 5) renderDone();
+
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function submitDetails() {
+  const name    = $('f-name').value.trim();
+  const wa      = $('f-wa').value.trim();
+  const session = $('f-session').value.trim();
+  let ok = true;
+
+  function setErr(id, inputId, msg) {
+    $(id).textContent = msg;
+    $(inputId).classList.toggle('err', !!msg);
+    if (msg) ok = false;
+  }
+
+  setErr('e-name',    'f-name',    name    ? '' : 'Please enter your name.');
+  setErr('e-wa',      'f-wa',      wa      ? '' : 'Please enter your WhatsApp / contact number.');
+  setErr('e-session', 'f-session', session ? '' : 'Please enter your class session time.');
+
+  if (!ok) return;
+  S.name    = name;
+  S.wa      = wa;
+  S.session = session;
+  goTo(4);
+}
+
+/* ============================================================
+   STEPPER
+   ============================================================ */
+const STEP_LABELS = ['Menu', 'Checkout', 'Details', 'Payment', 'Done'];
+
+function updateStepper() {
+  const el = $('stepper');
+  el.innerHTML = '';
+  STEP_LABELS.forEach((label, i) => {
+    const n = i + 1;
+    const active = n === S.step;
+    const done   = n < S.step;
+
+    const item = document.createElement('div');
+    item.className = 'step-item';
+
+    const wrap = document.createElement('div');
+    wrap.className = 'step-dot-wrap';
+
+    const dot = document.createElement('div');
+    dot.className = 'step-dot' + (active ? ' active' : done ? ' done' : '');
+    dot.textContent = done ? '✓' : n;
+
+    const lbl = document.createElement('div');
+    lbl.className = 'step-label' + (active ? ' active' : done ? ' done' : '');
+    lbl.textContent = label;
+
+    wrap.appendChild(dot);
+    wrap.appendChild(lbl);
+    item.appendChild(wrap);
+
+    if (i < STEP_LABELS.length - 1) {
+      const line = document.createElement('div');
+      line.className = 'step-line' + (done ? ' done' : '');
+      item.appendChild(line);
+    }
+
+    el.appendChild(item);
+  });
+}
+
+/* ============================================================
+   MENU RENDER
+   ============================================================ */
+function renderMenu() {
+  $('gym-banner').textContent = CONFIG.gymName;
+
+  // Setup notice
+  if (CONFIG.web3formsKey === 'YOUR_WEB3FORMS_KEY_HERE') {
+    $('setup-notice').style.display = 'block';
+  }
+
+  const grid = $('product-grid');
+  grid.innerHTML = '';
+  PRODUCTS.forEach(p => grid.appendChild(buildCard(p)));
+  updateStickyBar();
+}
+
+function buildCard(p) {
+  const card = document.createElement('div');
+  card.className = 'product-card';
+
+  /* — Image — */
+  const imgWrap = document.createElement('div');
+  imgWrap.className = 'product-img-wrap';
+
+  const img = document.createElement('img');
+  img.className = 'product-img';
+  img.src = p.imgs[0];
+  img.alt = p.name;
+  img.loading = 'lazy';
+  imgWrap.appendChild(img);
+
+  if (p.imgs.length > 1) {
+    const dots = document.createElement('div');
+    dots.className = 'photo-dots';
+    p.imgs.forEach((src, idx) => {
+      const dot = document.createElement('div');
+      dot.className = 'photo-dot' + (idx === 0 ? ' active' : '');
+      dot.addEventListener('click', () => {
+        img.src = src;
+        dots.querySelectorAll('.photo-dot').forEach((d, di) => d.classList.toggle('active', di === idx));
+      });
+      dots.appendChild(dot);
+    });
+    imgWrap.appendChild(dots);
+  }
+  card.appendChild(imgWrap);
+
+  /* — Body — */
+  const body = document.createElement('div');
+  body.className = 'product-body';
+
+  const nameEl = document.createElement('div');
+  nameEl.className = 'product-name';
+  nameEl.textContent = p.name;
+
+  const priceEl = document.createElement('div');
+  priceEl.className = 'product-price';
+  priceEl.textContent = fmt(p.price);
+
+  const descEl = document.createElement('div');
+  descEl.className = 'product-desc';
+  descEl.textContent = p.desc;
+
+  body.appendChild(nameEl);
+  body.appendChild(priceEl);
+  body.appendChild(descEl);
+
+  /* — Qty row — */
+  function row(labelText, child) {
+    const r = document.createElement('div');
+    r.className = 'qty-row';
+    const l = document.createElement('span');
+    l.className = 'qty-label';
+    l.textContent = labelText;
+    r.appendChild(l);
+    r.appendChild(child);
+    return r;
+  }
+
+  const sel = document.createElement('select');
+  sel.className = 'qty-select';
+  for (let i = 0; i <= 10; i++) {
+    const o = document.createElement('option');
+    o.value = i; o.textContent = i;
+    sel.appendChild(o);
+  }
+  sel.value = S.cart[p.id] || 0;
+  body.appendChild(row('Qty', sel));
+
+  const custom = document.createElement('input');
+  custom.type = 'number'; custom.min = 0; custom.step = 1;
+  custom.className = 'qty-custom';
+  custom.placeholder = 'e.g. 25';
+  body.appendChild(row('Custom', custom));
+
+  const lineTotal = document.createElement('div');
+  lineTotal.className = 'line-total';
+  lineTotal.textContent = 'S$0.00';
+  body.appendChild(lineTotal);
+
+  const note = document.createElement('div');
+  note.className = 'custom-note';
+  body.appendChild(note);
+
+  function updateQty() {
+    const c = parseInt(custom.value) || 0;
+    if (c > 0) {
+      sel.disabled = true; sel.style.opacity = '0.4';
+      S.cart[p.id] = c;
+      note.textContent = 'Using custom quantity';
+    } else {
+      sel.disabled = false; sel.style.opacity = '';
+      S.cart[p.id] = parseInt(sel.value) || 0;
+      note.textContent = '';
+    }
+    const q = S.cart[p.id] || 0;
+    lineTotal.textContent = q > 0 ? `${q} × ${fmt(p.price)} = ${fmt(q * p.price)}` : 'S$0.00';
+    updateStickyBar();
+  }
+
+  sel.addEventListener('change', updateQty);
+  custom.addEventListener('input', updateQty);
+
+  /* — Nutrition accordion — */
+  const toggle = document.createElement('button');
+  toggle.className = 'nutrition-toggle';
+  toggle.innerHTML = 'Nutrition &amp; macros <span class="chevron">▾</span>';
+
+  const content = document.createElement('div');
+  content.className = 'nutrition-content';
+
+  const n = p.nut;
+  let pills = `
+    <div class="macro-pills">
+      <div class="macro-pill">${n.kcal} kcal</div>
+      <div class="macro-pill protein">Protein ${n.protein}</div>
+      <div class="macro-pill">Carbs ${n.carbs}</div>
+      <div class="macro-pill">Fat ${n.fat}</div>
+      ${n.fibre ? `<div class="macro-pill">Fibre ${n.fibre}</div>` : ''}
+    </div>
+    <div class="allergen-text">Contains: ${p.allergens}</div>
+  `;
+  if (p.weight) pills += `<div class="allergen-text">Net weight: ${p.weight}</div>`;
+  content.innerHTML = pills;
+
+  toggle.addEventListener('click', () => {
+    const open = content.classList.toggle('open');
+    toggle.classList.toggle('open', open);
+  });
+
+  body.appendChild(toggle);
+  body.appendChild(content);
+  card.appendChild(body);
+  return card;
+}
+
+function updateStickyBar() {
+  $('sticky-amount').textContent = fmt(cartTotal());
+}
+
+/* ============================================================
+   CHECKOUT RENDER
+   ============================================================ */
+function renderCheckout() {
+  const items = PRODUCTS.filter(p => (S.cart[p.id] || 0) > 0);
+  if (!items.length) {
+    $('checkout-card').innerHTML = '<p style="text-align:center;color:var(--muted);padding:20px">No items selected.</p>';
+    return;
+  }
+
+  let html = '';
+  items.forEach(p => {
+    const q = S.cart[p.id];
+    html += `
+      <div class="summary-line">
+        <div>
+          <div class="summary-item-name">${p.name}</div>
+          <div class="summary-item-qty">${q} × ${fmt(p.price)}</div>
+        </div>
+        <div class="summary-item-total">${fmt(q * p.price)}</div>
+      </div>`;
+  });
+  html += `
+    <div class="summary-total-row">
+      <div class="summary-total-label">Total</div>
+      <div class="summary-total-amount">${fmt(cartTotal())}</div>
+    </div>`;
+  $('checkout-card').innerHTML = html;
+}
+
+/* ============================================================
+   DONE RENDER
+   ============================================================ */
+function renderDone() {
+  const items = PRODUCTS.filter(p => (S.cart[p.id] || 0) > 0);
+  let html = `<div class="done-card-title">Order Summary</div>`;
+  items.forEach(p => {
+    html += `<div class="done-row"><span>${p.name} × ${S.cart[p.id]}</span><span>${fmt(S.cart[p.id] * p.price)}</span></div>`;
+  });
+  html += `
+    <div class="done-row" style="font-weight:800;border-top:1px solid var(--border);margin-top:6px;padding-top:8px">
+      <span>Total</span><span>${fmt(cartTotal())}</span>
+    </div>
+    <div class="done-meta">
+      <div><strong>Name:</strong> ${S.name}</div>
+      <div><strong>WhatsApp:</strong> ${S.wa}</div>
+      <div><strong>Class:</strong> ${S.session}</div>
+    </div>`;
+  $('done-card').innerHTML = html;
+}
+
+/* ============================================================
+   INIT
+   ============================================================ */
+updateStepper();
+renderMenu();
+</script>
+</body>
+</html>
