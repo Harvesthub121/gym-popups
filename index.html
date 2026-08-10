@@ -2932,7 +2932,7 @@ var qrcode = function() {
       <canvas id="qr-canvas"></canvas>
       <div class="qr-ref">Reference: <strong id="qr-ref-text">—</strong></div>
       <div>
-        <button class="save-btn" onclick="saveQR()">📥 Save QR to Photos</button>
+        <button class="save-btn" onclick="saveQR()">⬇️ Save image to gallery</button>
         <div class="save-tip" id="save-tip">Tap to save the QR image for easier scanning from your phone.</div>
       </div>
     </div>
@@ -2955,7 +2955,7 @@ var qrcode = function() {
     <div class="done-wrap">
       <div class="success-icon">✓</div>
       <h2 class="done-heading">Order Received!</h2>
-      <p class="done-body">Thank you — we've received your order and payment confirmation. We'll be in touch to arrange your pick-up at class.</p>
+      <p class="done-body">Thank you — we've received your order and payment confirmation. See you after your class to pick up your items.<br><br><span style="color:var(--primary-dark);font-weight:700">#harvestyourbody #refuel</span></p>
       <div class="done-card" id="done-card"></div>
       <button class="btn btn-ghost" onclick="window.location.reload()">Place another order</button>
     </div>
@@ -3217,7 +3217,7 @@ function renderQR() {
 /* ============================================================
    SAVE QR TO GALLERY
    ============================================================ */
-function saveQR() {
+async function saveQR() {
   const srcCanvas = $('qr-canvas');
   if (!srcCanvas || !srcCanvas.width) {
     alert('Please wait for the QR code to load first.');
@@ -3250,54 +3250,51 @@ function saveQR() {
   ctx.font = 'bold 18px Inter, sans-serif';
   ctx.fillText('Amount: ' + fmt(cartTotal()), W / 2, 342);
 
-  // Reference
+  // Reference & labels
   ctx.fillStyle = '#5a6068';
   ctx.font = '14px Inter, sans-serif';
   ctx.fillText('Ref: ' + $('qr-ref-text').textContent, W / 2, 370);
-
   ctx.font = '13px Inter, sans-serif';
   ctx.fillText(CONFIG.gymName, W / 2, 395);
   ctx.fillText('Scan with your banking app to pay', W / 2, 420);
-
   ctx.fillStyle = '#d5b5b0';
   ctx.font = '11px Inter, sans-serif';
   ctx.fillText('© 2026 Harvest Hub', W / 2, 450);
 
   const dataUrl = out.toDataURL('image/png');
-  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
 
-  if (isIOS) {
-    // iOS: open in new tab so user can long-press → Save to Photos
-    const win = window.open('', '_blank');
-    if (win) {
-      win.document.write(
-        '<html><head><meta name="viewport" content="width=device-width,initial-scale=1"></head>' +
-        '<body style="margin:0;background:#111;display:flex;flex-direction:column;align-items:center;padding:20px">' +
-        '<img src="' + dataUrl + '" style="max-width:100%;border-radius:12px" />' +
-        '<p style="color:#fff;font-family:sans-serif;margin-top:14px;text-align:center;font-size:14px">' +
-        'Long-press the image above, then tap <strong>Save to Photos</strong></p>' +
-        '</body></html>'
-      );
-    }
-    $('save-tip').textContent = 'A new tab has opened — long-press the QR and tap Save to Photos.';
-  } else {
-    // Android / Desktop — blob download
-    fetch(dataUrl)
-      .then(r => r.blob())
-      .then(blob => {
-        const url = URL.createObjectURL(blob);
-        const a   = document.createElement('a');
-        a.href     = url;
-        a.download = 'harvest-hub-paynow-qr.png';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        setTimeout(() => URL.revokeObjectURL(url), 200);
-        $('save-tip').textContent = 'QR saved! Check your Downloads or Photos.';
-      })
-      .catch(() => {
-        $('save-tip').textContent = 'Download unavailable in this browser — try taking a screenshot.';
+  try {
+    // Convert data URL to Blob → File
+    const res  = await fetch(dataUrl);
+    const blob = await res.blob();
+    const file = new File([blob], 'harvest-hub-paynow-qr.png', { type: 'image/png' });
+
+    // Use native Web Share API (iOS Share Sheet / Android share)
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({
+        files: [file],
+        title: 'Harvest Hub PayNow QR',
+        text: 'Scan to pay ' + fmt(cartTotal()) + ' to Harvest Hub'
       });
+      $('save-tip').textContent = 'Tap "Save Image" in the share sheet to save to your Photos.';
+      return;
+    }
+
+    // Fallback: trigger file download (Android / desktop)
+    const url = URL.createObjectURL(blob);
+    const a   = document.createElement('a');
+    a.href     = url;
+    a.download = 'harvest-hub-paynow-qr.png';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 200);
+    $('save-tip').textContent = 'QR saved! Check your Photos or Downloads folder.';
+
+  } catch (e) {
+    if (e.name !== 'AbortError') {
+      $('save-tip').textContent = 'Could not save — try screenshotting the QR code above.';
+    }
   }
 }
 
